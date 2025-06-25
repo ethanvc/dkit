@@ -2,6 +2,8 @@ package dkit
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/ethanvc/dkit/dgit"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +26,9 @@ type DeleteMergedBranchReq struct {
 }
 
 func DeleteMergedBranch(req *DeleteMergedBranchReq) error {
+	if req.DryRun {
+		fmt.Printf("Notice: dry run mode\n")
+	}
 	c := context.Background()
 	localBranches, err := dgit.ListLocalBranches(c)
 	if err != nil {
@@ -54,12 +59,16 @@ func DeleteMergedBranch(req *DeleteMergedBranchReq) error {
 				break
 			}
 		}
-		if merged && !req.DryRun {
+		if !merged {
+			continue
+		}
+		if !req.DryRun {
 			err = dgit.DeleteBranch(c, localBranch)
 			if err != nil {
 				return err
 			}
 		}
+		fmt.Printf("delete local branch: %s\n", localBranch)
 	}
 	return nil
 }
