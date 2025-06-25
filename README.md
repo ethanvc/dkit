@@ -5,3 +5,5 @@
 git cherry -v dst src
 检查src的提交是否已经存在于dst中。
 git cherry -v main featurea # featurea是否已经都合并到main中
+
+test
