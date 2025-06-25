@@ -30,10 +30,6 @@ func DeleteMergedBranch(req *DeleteMergedBranchReq) error {
 		fmt.Printf("Notice: dry run mode\n")
 	}
 	c := context.Background()
-	localBranches, err := dgit.ListLocalBranches(c)
-	if err != nil {
-		return err
-	}
 	productionBranches := map[string]struct{}{
 		"origin/master":  {},
 		"origin/main":    {},
@@ -48,27 +44,24 @@ func DeleteMergedBranch(req *DeleteMergedBranchReq) error {
 			delete(productionBranches, k)
 		}
 	}
-	for _, localBranch := range localBranches {
-		merged := false
-		for productionBranch, _ := range productionBranches {
-			merged, err = dgit.IsBranchMerged(c, productionBranch, localBranch)
-			if err != nil {
-				return err
-			}
-			if merged {
-				break
-			}
+	mergedBranches := make(map[string]struct{})
+	for targetBranch := range productionBranches {
+		branches, err := dgit.ListMergedBranches(c, targetBranch)
+		if err != nil {
+			return err
 		}
-		if !merged {
-			continue
+		for _, branch := range branches {
+			mergedBranches[branch] = struct{}{}
 		}
+	}
+	for branch, _ := range mergedBranches {
 		if !req.DryRun {
-			err = dgit.DeleteBranch(c, localBranch)
+			err := dgit.DeleteBranch(c, branch)
 			if err != nil {
 				return err
 			}
 		}
-		fmt.Printf("delete local branch: %s\n", localBranch)
+		fmt.Printf("delete local branch: %s\n", branch)
 	}
 	return nil
 }

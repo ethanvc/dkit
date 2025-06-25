@@ -41,13 +41,12 @@ func runCommand(c context.Context, name string, args ...string) ([]byte, int, er
 	return bytesData, cmd.ProcessState.ExitCode(), err
 }
 
-func IsBranchMerged(c context.Context, main string, feature string) (bool, error) {
-	buf, _, err := runCommand(c, "git", "cherry", main, feature)
+func ListMergedBranches(c context.Context, targetBranch string) ([]string, error) {
+	buf, _, err := runCommand(c, "git", "branch", "--merged", targetBranch)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	_ = buf
-	return false, nil
+	return splitString(string(buf), "\n"), nil
 }
 
 func IsRemoteBranchExist(c context.Context, remoteBranch string) (bool, error) {
