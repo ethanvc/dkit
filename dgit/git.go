@@ -42,7 +42,7 @@ func runCommand(c context.Context, name string, args ...string) ([]byte, int, er
 }
 
 func ListMergedBranches(c context.Context, targetBranch string) ([]string, error) {
-	buf, _, err := runCommand(c, "git", "branch", "--merged", targetBranch)
+	buf, _, err := runCommand(c, "git", "branch", "--merged", targetBranch, `--format=%(refname:short)`)
 	if err != nil {
 		return nil, err
 	}
