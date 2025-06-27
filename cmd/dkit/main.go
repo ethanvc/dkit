@@ -15,6 +15,7 @@ func main() {
 	}
 
 	dkit.AddDeleteMergedBranchCmd(rootCmd)
+	dkit.AddDiffCmd(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
