@@ -26,16 +26,20 @@ func (w *ObjWalker) Walk(obj any, fn VisitFunc) {
 }
 
 func (w *ObjWalker) walk(obj reflect.Value, fn VisitFunc) bool {
-	switch obj.Kind() {
-	case reflect.Map:
-		return w.walkMap(obj, fn)
-	case reflect.Array:
-	case reflect.Slice:
-		return w.walkSlice(obj, fn)
-	default:
-		return true
+	for {
+		kind := obj.Kind()
+		switch kind {
+		case reflect.Map:
+			return w.walkMap(obj, fn)
+		case reflect.Array:
+		case reflect.Slice:
+			return w.walkSlice(obj, fn)
+		case reflect.Interface, reflect.Pointer:
+			obj = obj.Elem()
+		default:
+			return true
+		}
 	}
-	return true
 }
 
 func (w *ObjWalker) walkMap(obj reflect.Value, fn VisitFunc) bool {
