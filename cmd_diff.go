@@ -1,6 +1,7 @@
 package dkit
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
@@ -9,15 +10,44 @@ import (
 
 func AddDiffCmd(rootCmd *cobra.Command) {
 	cmd := &cobra.Command{
-		Use: "diff",
+		Use: "diff [file1.txt file2.txt]",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 || len(args) == 2 {
+				return nil
+			}
+			return errors.New("zero or two arguments required")
+		},
 	}
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return CmdDiff()
+		if len(args) == 0 {
+			return diffConsole()
+		} else if len(args) == 2 {
+			return DiffTwoFile(args[0], args[1])
+		} else {
+			return errors.New("invalid argument")
+		}
 	}
 	rootCmd.AddCommand(cmd)
 }
 
-func CmdDiff() error {
+func DiffTwoFile(file1, file2 string) error {
+	content1, err := os.ReadFile(file1)
+	if err != nil {
+		return err
+	}
+	content2, err := os.ReadFile(file2)
+	if err != nil {
+		return err
+	}
+	return diffString(string(content1), string(content2))
+}
+
+func diffString(content1, content2 string) error {
+	diffCom := NewDiffCompare()
+	return diffCom.ShowDiff(content1, content2)
+}
+
+func diffConsole() error {
 	content1, err := readInputFromConsole("read_first_text")
 	if err != nil {
 		return err
@@ -26,8 +56,7 @@ func CmdDiff() error {
 	if err != nil {
 		return err
 	}
-	com := NewDiffCompare()
-	return com.ShowDiff(content1, content2)
+	return diffString(content1, content2)
 }
 
 func readInputFromConsole(title string) (string, error) {

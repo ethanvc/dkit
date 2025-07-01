@@ -22,13 +22,13 @@ func NewDiffCompare() *DiffCompare {
 func (com *DiffCompare) ShowDiff(content1, content2 string) error {
 	content1, ext1 := com.PrepareContent(content1)
 	content2, ext2 := com.PrepareContent(content2)
-	f1, err := os.CreateTemp("", "dkit_temp_*."+ext1)
+	f1, err := os.CreateTemp("", "dkit_temp_1_*."+ext1)
 	if err != nil {
 		return err
 	}
 	f1.WriteString(content1)
 	f1.Close()
-	f2, err := os.CreateTemp("", "dkit_temp_*."+ext2)
+	f2, err := os.CreateTemp("", "dkit_temp_2_*."+ext2)
 	if err != nil {
 		return err
 	}
