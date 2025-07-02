@@ -4,18 +4,32 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/tidwall/gjson"
 	"os"
 	"os/exec"
 )
 
 func AddDiffCmd(rootCmd *cobra.Command) {
 	cmd := &cobra.Command{
-		Use: "diff [file1.txt file2.txt]",
+		Use: "diff INPUTS",
+		Long: `Compare text differences in three ways:
+
+1. From console input (no arguments):
+   $ diff
+   [Enter benchmark text]
+   [Enter target text]
+
+2. From two text files:
+   $ diff benchmark.txt target.txt
+
+3. From a JSON file:
+   $ diff diff.json
+   (diff.json format: {"benchmark":"text1", "target":"text2"})`,
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || len(args) == 2 {
+			if len(args) >= 0 && len(args) <= 2 {
 				return nil
 			}
-			return errors.New("zero or two arguments required")
+			return errors.New("at most two arguments required")
 		},
 	}
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -23,6 +37,8 @@ func AddDiffCmd(rootCmd *cobra.Command) {
 			return diffConsole()
 		} else if len(args) == 2 {
 			return DiffTwoFile(args[0], args[1])
+		} else if len(args) == 1 {
+			return DiffDiffFile(args[0])
 		} else {
 			return errors.New("invalid argument")
 		}
@@ -30,21 +46,37 @@ func AddDiffCmd(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(cmd)
 }
 
-func DiffTwoFile(file1, file2 string) error {
-	content1, err := os.ReadFile(file1)
+func DiffDiffFile(diffFile string) error {
+	diffContent, err := os.ReadFile(diffFile)
 	if err != nil {
 		return err
 	}
-	content2, err := os.ReadFile(file2)
-	if err != nil {
-		return err
+	benchResult := gjson.GetBytes(diffContent, "benchmark")
+	if !benchResult.Exists() {
+		return errors.New("benchmark not found")
 	}
-	return diffString(string(content1), string(content2))
+	targetResult := gjson.GetBytes(diffContent, "target")
+	if !targetResult.Exists() {
+		return errors.New("target not found")
+	}
+	return DiffString(benchResult.String(), targetResult.String())
 }
 
-func diffString(content1, content2 string) error {
+func DiffTwoFile(benchmarkFile, targetFile string) error {
+	benchContent, err := os.ReadFile(benchmarkFile)
+	if err != nil {
+		return err
+	}
+	targetContent, err := os.ReadFile(targetFile)
+	if err != nil {
+		return err
+	}
+	return DiffString(string(benchContent), string(targetContent))
+}
+
+func DiffString(benchContent, targetContent string) error {
 	diffCom := NewDiffCompare()
-	return diffCom.ShowDiff(content1, content2)
+	return diffCom.ShowDiff(benchContent, targetContent)
 }
 
 func diffConsole() error {
@@ -56,7 +88,7 @@ func diffConsole() error {
 	if err != nil {
 		return err
 	}
-	return diffString(content1, content2)
+	return DiffString(content1, content2)
 }
 
 func readInputFromConsole(title string) (string, error) {
