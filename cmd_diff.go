@@ -80,11 +80,11 @@ func DiffString(benchContent, targetContent string) error {
 }
 
 func diffConsole() error {
-	content1, err := readInputFromConsole("read_first_text")
+	content1, err := readInputFromConsole("benchmark")
 	if err != nil {
 		return err
 	}
-	content2, err := readInputFromConsole("read_second_text")
+	content2, err := readInputFromConsole("target")
 	if err != nil {
 		return err
 	}
