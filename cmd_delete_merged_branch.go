@@ -58,6 +58,7 @@ func DeleteMergedBranch(req *DeleteMergedBranchReq) error {
 		if !req.DryRun {
 			err := dgit.DeleteBranch(c, branch)
 			if err != nil {
+				fmt.Printf("failed to delete branch %s\n", branch)
 				return err
 			}
 		}
