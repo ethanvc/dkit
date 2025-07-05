@@ -1,7 +1,6 @@
 package base
 
 import (
-	"encoding/json"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -14,7 +13,7 @@ func ExpandJson(src []byte) []byte {
 		if val.Type != gjson.String {
 			return JsonVisitResultContinue
 		}
-		if !json.Valid([]byte(val.String())) {
+		if !isArrayOrObject(val.String()) {
 			return JsonVisitResultContinue
 		}
 		expandedChild := ExpandJson([]byte(val.String()))
@@ -26,4 +25,9 @@ func ExpandJson(src []byte) []byte {
 		return JsonVisitResultContinue
 	})
 	return dst
+}
+
+func isArrayOrObject(val string) bool {
+	result := gjson.Parse(val)
+	return result.IsObject() || result.IsArray()
 }
