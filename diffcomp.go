@@ -6,7 +6,6 @@ import (
 	"github.com/ethanvc/dkit/base"
 	"os"
 	"os/exec"
-	"reflect"
 )
 
 type DiffCompare struct {
@@ -56,39 +55,7 @@ func (com *DiffCompare) prepareJson(content string) (string, string) {
 		json.Indent(buf, []byte(content), "", "    ")
 		return buf.String(), ext
 	}
-	var data any
-	json.Unmarshal([]byte(content), &data)
-	walker := base.NewObjWalker()
-	walker.Walk(data, func(obj, key, val reflect.Value) (base.VisitResult, reflect.Value) {
-		keyAny := key.Interface()
-		valAny := val.Interface()
-		_ = keyAny
-		_ = valAny
-		strVal, ok := reflectGetStr(val)
-		if !ok {
-			return base.VisitResultContinue, val
-		}
-		if !json.Valid([]byte(strVal)) {
-			return base.VisitResultContinue, val
-		}
-		var anyVal any
-		json.Unmarshal([]byte(strVal), &anyVal)
-		return base.VisitResultContinue, reflect.ValueOf(anyVal)
-	})
-	newContent, _ := json.MarshalIndent(data, "", "    ")
-	return string(newContent), ext
-}
-
-func reflectGetStr(val reflect.Value) (string, bool) {
-	for {
-		kind := val.Kind()
-		if kind == reflect.String {
-			return val.String(), true
-		}
-		if kind == reflect.Interface {
-			val = val.Elem()
-			continue
-		}
-		return "", false
-	}
+	expandContent := base.ExpandJson([]byte(content))
+	prettyContent, _ := json.MarshalIndent([]byte(expandContent), "", "    ")
+	return string(prettyContent), ext
 }
