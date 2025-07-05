@@ -56,6 +56,10 @@ func (com *DiffCompare) prepareJson(content string) (string, string) {
 		return buf.String(), ext
 	}
 	expandContent := base.ExpandJson([]byte(content))
-	prettyContent, _ := json.MarshalIndent([]byte(expandContent), "", "    ")
-	return string(prettyContent), ext
+	buf := bytes.NewBuffer(nil)
+	err := json.Indent(buf, expandContent, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	return buf.String(), ext
 }

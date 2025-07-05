@@ -63,15 +63,26 @@ func (w *JsonWalker) Walk(content []byte, cb JsonVisitFunc) {
 
 func (w *JsonWalker) walk(obj gjson.Result, p JsonWalkPath, fn JsonVisitFunc) bool {
 	obj.ForEach(func(key, val gjson.Result) bool {
+		var childP JsonWalkPath
 		switch key.Type {
 		case gjson.String:
-			childP := p.AppendKey(key.String())
-			fn(childP, val)
+			childP = p.AppendKey(key.String())
 		case gjson.Number:
-			childP := p.AppendIndex(int(key.Int()))
-			fn(childP, val)
+			childP = p.AppendIndex(int(key.Int()))
 		default:
 			fmt.Println("unsupported key type")
+		}
+		visitResult := fn(childP, val)
+		switch visitResult {
+		case JsonVisitResultStop:
+			return false
+		case JsonVisitResultSkipCurrentValue:
+			return true
+		case JsonVisitResultContinue:
+			// continue processing
+		}
+		if val.IsObject() || val.IsArray() {
+			return w.walk(val, childP, fn)
 		}
 		return true
 	})
