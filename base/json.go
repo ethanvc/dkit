@@ -1,6 +1,8 @@
 package base
 
 import (
+	"encoding/json"
+
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -27,7 +29,11 @@ func ExpandJson(src []byte) []byte {
 	return dst
 }
 
+// to gjson, "[Linked] 6365" string is recgnized as an array
 func isArrayOrObject(val string) bool {
+	if !json.Valid([]byte(val)) {
+		return false
+	}
 	result := gjson.Parse(val)
 	return result.IsObject() || result.IsArray()
 }
