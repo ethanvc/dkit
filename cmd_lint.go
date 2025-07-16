@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"slices"
+	"strings"
 
 	"github.com/ethanvc/dkit/base"
 	"github.com/ethanvc/dkit/dgit"
@@ -40,11 +41,12 @@ func RunLintCmd(targetBranch string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("merge base is %s\n", mergeBase)
 	files, err := dgit.ListAllChangeFiles(c, "HEAD", targetBranch)
 	if err != nil {
 		return err
 	}
-	files, err = removeNotExistFiles(files)
+	files, err = removeUnrelatedFiles(files)
 	if err != nil {
 		return err
 	}
@@ -81,17 +83,21 @@ func printChangedFiles(files []string) {
 	}
 }
 
-func removeNotExistFiles(files []string) ([]string, error) {
+func removeUnrelatedFiles(files []string) ([]string, error) {
 	var newFiles []string
 	for _, file := range files {
+		if !strings.HasSuffix(file, ".go") {
+			continue
+		}
 		_, err := os.Stat(file)
 		if err == nil {
+			newFiles = append(newFiles, file)
 			continue
 		}
 		if os.IsNotExist(err) {
 			continue
 		}
-		newFiles = append(newFiles, file)
+		return nil, err
 	}
 	return newFiles, nil
 }

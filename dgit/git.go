@@ -103,9 +103,9 @@ func GetMergeBase(c context.Context, srcRef, dstRef string) (string, error) {
 }
 
 func ListAllChangeFiles(c context.Context, srcRef, dstRef string) ([]string, error) {
-	buf, _, err := runCommand(c, "git", "diff", "--name-only", dstRef, fmt.Sprintf("%s...%s", dstRef, srcRef))
+	buf, _, err := runCommand(c, "git", "diff", "--name-only", fmt.Sprintf("%s...%s", dstRef, srcRef))
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	files := splitString(string(buf), "\n")
 	return files, nil
