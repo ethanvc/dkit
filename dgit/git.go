@@ -21,13 +21,38 @@ func splitString(s string, sep string) []string {
 	return result
 }
 
-func ListLocalBranches(c context.Context) ([]string, error) {
-	buf, _, err := runCommand(c, "git", "branch", "--format=%(refname:short)")
+func ListAllBranches(c context.Context) ([]RefBranchName, error) {
+	buf, _, err := runCommand(c, "git", "branch", "-a", "--format=%(refname)")
 	if err != nil {
 		return nil, err
 	}
 	branches := splitString(string(buf), "\n")
-	return branches, nil
+	refBranches := make([]RefBranchName, 0, len(branches))
+	for _, branch := range branches {
+		refBranches = append(refBranches, RefBranchName(branch))
+	}
+	return refBranches, nil
+}
+
+type RefBranchName string
+
+func (ref RefBranchName) BranchName() string {
+	name := strings.TrimPrefix(string(ref), "refs/heads/")
+	name = strings.TrimPrefix(name, "refs/remotes/")
+	return name
+}
+
+func IsBranchExist(c context.Context, name string) (bool, error) {
+	branchList, err := ListAllBranches(c)
+	if err != nil {
+		return false, err
+	}
+	for _, branch := range branchList {
+		if branch.BranchName() == name {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func runCommand(c context.Context, name string, args ...string) ([]byte, int, error) {
@@ -67,4 +92,21 @@ func DeleteBranch(c context.Context, branchName string) error {
 		return err
 	}
 	return nil
+}
+
+func GetMergeBase(c context.Context, srcRef, dstRef string) (string, error) {
+	buf, _, err := runCommand(c, "git", "merge-base", srcRef, dstRef)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(buf)), nil
+}
+
+func ListAllChangeFiles(c context.Context, srcRef, dstRef string) ([]string, error) {
+	buf, _, err := runCommand(c, "git", "diff", "--name-only", dstRef, fmt.Sprintf("%s...%s", dstRef, srcRef))
+	if err != nil {
+		return nil, nil
+	}
+	files := splitString(string(buf), "\n")
+	return files, nil
 }

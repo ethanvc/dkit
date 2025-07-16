@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/ethanvc/dkit"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func main() {
@@ -16,6 +17,7 @@ func main() {
 
 	dkit.AddDeleteMergedBranchCmd(rootCmd)
 	dkit.AddDiffCmd(rootCmd)
+	dkit.AddLintCmd(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
