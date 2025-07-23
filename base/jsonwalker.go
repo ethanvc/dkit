@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/tidwall/gjson"
+	"strconv"
 )
 
 type JsonWalker struct {
@@ -21,6 +22,20 @@ func (p JsonWalkPath) AppendKey(key string) JsonWalkPath {
 
 func (p JsonWalkPath) AppendIndex(index int) JsonWalkPath {
 	return append(p, index)
+}
+
+func (p JsonWalkPath) GetLastNode() string {
+	if len(p) == 0 {
+		return ""
+	}
+	v := p[len(p)-1]
+	switch realV := v.(type) {
+	case string:
+		return realV
+	case int:
+		return strconv.Itoa(realV)
+	}
+	panic("unreachable")
 }
 
 func (p JsonWalkPath) GetFullPath() string {
