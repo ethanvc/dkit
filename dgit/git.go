@@ -102,6 +102,7 @@ func GetMergeBase(c context.Context, srcRef, dstRef string) (string, error) {
 	return strings.TrimSpace(string(buf)), nil
 }
 
+// ListAllChangeFiles return path relative to git root
 func ListAllChangeFiles(c context.Context, srcRef, dstRef string) ([]string, error) {
 	buf, _, err := runCommand(c, "git", "diff", "--name-only", fmt.Sprintf("%s...%s", dstRef, srcRef))
 	if err != nil {
