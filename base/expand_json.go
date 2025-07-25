@@ -2,38 +2,52 @@ package base
 
 import (
 	"encoding/json"
-
-	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"
 )
 
-func ExpandJson(src []byte) []byte {
-	w := NewJsonWalker()
-	dst := src
-	var err error
-	w.Walk(src, func(p JsonWalkPath, val gjson.Result) JsonVisitResult {
-		if val.Type != gjson.String {
-			return JsonVisitResultContinue
-		}
-		if !isArrayOrObject(val.String()) {
-			return JsonVisitResultContinue
-		}
-		expandedChild := ExpandJson([]byte(val.String()))
-		childPath := p.GetFullPath()
-		dst, err = sjson.SetRawBytes(dst, childPath, expandedChild)
-		if err != nil {
-			panic("why have error")
-		}
-		return JsonVisitResultContinue
-	})
-	return dst
+func ExpandJson(data []byte) ([]byte, error) {
+	var jsonObj any
+	err := Unmarshal(data, &jsonObj)
+	if err != nil {
+		return nil, err
+	}
+	jsonObj, err = ExpandJsonAny(jsonObj)
+	if err != nil {
+		return nil, err
+	}
+	data, err = json.Marshal(jsonObj)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
-// to gjson, "[Linked] 6365" string is recgnized as an array
-func isArrayOrObject(val string) bool {
-	if !json.Valid([]byte(val)) {
-		return false
+func ExpandJsonAny(data any) (any, error) {
+	switch realData := data.(type) {
+	case map[string]any:
+		for k, v := range realData {
+			newV, err := ExpandJsonAny(v)
+			if err != nil {
+				return nil, err
+			}
+			realData[k] = newV
+		}
+	case []any:
+		for i, item := range realData {
+			newData, err := ExpandJsonAny(item)
+			if err != nil {
+				return nil, err
+			}
+			realData[i] = newData
+		}
+	case string:
+		if json.Valid([]byte(realData)) {
+			var newData any
+			err := Unmarshal([]byte(realData), &newData)
+			if err != nil {
+				return nil, err
+			}
+			return ExpandJsonAny(newData)
+		}
 	}
-	result := gjson.Parse(val)
-	return result.IsObject() || result.IsArray()
+	return data, nil
 }
