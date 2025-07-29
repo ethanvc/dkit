@@ -13,7 +13,32 @@ func Unmarshal(data []byte, v any) error {
 	return decoder.Decode(v)
 }
 
+const jsonPathEscapeChar = '\''
+
 type JsonPath []any
+
+func ParseJsonPath(path string) (JsonPath, error) {
+	var jsonPath JsonPath
+	var node string
+	escape := false
+	for _, ch := range path {
+		if ch == jsonPathEscapeChar {
+			if escape {
+				node += string(jsonPathEscapeChar)
+				escape = false
+			} else {
+				escape = true
+			}
+			continue
+		} else if ch == '.' {
+			if escape {
+				node += "."
+				escape = false
+				continue
+			}
+		}
+	}
+}
 
 func (p JsonPath) AppendKey(key string) JsonPath {
 	return append(p, key)
