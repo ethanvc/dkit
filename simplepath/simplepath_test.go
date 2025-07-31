@@ -11,4 +11,7 @@ func TestSimplePath_Parse(t *testing.T) {
 	p, err = Parse("a.b.c")
 	require.NoError(t, err)
 	require.Equal(t, `a.b.c`, p.String())
+	p, err = Parse("a.[*].c.d")
+	require.NoError(t, err)
+	require.Equal(t, `a.[*].c.d`, p.String())
 }
