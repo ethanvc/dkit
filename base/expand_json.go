@@ -2,6 +2,7 @@ package base
 
 import (
 	"encoding/json"
+	"net/url"
 )
 
 func ExpandJson(data []byte) ([]byte, error) {
@@ -48,6 +49,22 @@ func ExpandJsonAny(data any) (any, error) {
 			}
 			return ExpandJsonAny(newData)
 		}
+		if result, ok := expandUrl(realData); ok {
+			return result, nil
+		}
 	}
 	return data, nil
+}
+
+func expandUrl(data string) (any, bool) {
+	u, err := url.Parse(data)
+	if err != nil {
+		return nil, false
+	}
+	mapData := make(map[string]any)
+	queries := u.Query()
+	u.RawQuery = ""
+	mapData["url"] = u.String()
+	mapData["queries"] = queries
+	return mapData, true
 }
