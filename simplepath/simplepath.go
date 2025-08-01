@@ -108,6 +108,50 @@ func (s SimplePath) AppendKey(key string) SimplePath {
 	})
 }
 
+func (s SimplePath) Match(target SimplePath) bool {
+	if len(s) != len(target) {
+		return false
+	}
+	for i, srcNode := range s {
+		dstNode := target[i]
+		if srcNode != dstNode {
+			return false
+		}
+	}
+	return true
+}
+
+func (s SimplePath) Get(data any) (any, bool) {
+	if len(s) == 0 {
+		return data, true
+	}
+	node := s[0]
+	switch node.NodeType {
+	case NodeTypeKey:
+		mapVal, ok := data.(map[string]any)
+		if !ok {
+			return nil, false
+		}
+		data, ok = mapVal[node.Value]
+		if !ok {
+			return nil, false
+		}
+		return s[1:].Get(data)
+	case NodeTypeIndex:
+		arrayVal, ok := data.([]any)
+		if !ok {
+			return nil, false
+		}
+		index, _ := strconv.Atoi(node.Value)
+		if index < 0 || index >= len(arrayVal) {
+			return nil, false
+		}
+		return s[1:].Get(arrayVal[index])
+	default:
+		return nil, false
+	}
+}
+
 func escapeKey(key string) string {
 	buf := bytes.NewBuffer(nil)
 	for _, ch := range key {
