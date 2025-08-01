@@ -14,9 +14,16 @@ func TestJsonArrayToObject(t *testing.T) {
 
 	tests := []args{
 		{
-			"[]",
+			`[{"a":3}, {"a":4}]`,
+			map[string]string{
+				``: `a`,
+			},
+			`{"3":{"a":3},"4":{"a":4}}`,
+		},
+		{
+			`[]`,
 			map[string]string{},
-			"[]",
+			`[]`,
 		},
 	}
 	for _, test := range tests {
