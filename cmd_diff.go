@@ -32,13 +32,18 @@ func AddDiffCmd(rootCmd *cobra.Command) {
 			return errors.New("at most two arguments required")
 		},
 	}
+	arrayObject := cmd.Flags().StringArrayP("array-object", "A", nil, "convert array to object")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		arrayObjConfig := make(map[string]string)
+		for i := 0; i < len(*arrayObject)-1; i += 2 {
+			arrayObjConfig[(*arrayObject)[i]] = (*arrayObject)[i+1]
+		}
 		if len(args) == 0 {
-			return diffConsole()
+			return diffConsole(arrayObjConfig)
 		} else if len(args) == 2 {
-			return DiffTwoFile(args[0], args[1])
+			return DiffTwoFile(args[0], args[1], arrayObjConfig)
 		} else if len(args) == 1 {
-			return DiffDiffFile(args[0])
+			return DiffDiffFile(args[0], arrayObjConfig)
 		} else {
 			return errors.New("invalid argument")
 		}
@@ -46,7 +51,7 @@ func AddDiffCmd(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(cmd)
 }
 
-func DiffDiffFile(diffFile string) error {
+func DiffDiffFile(diffFile string, aoConfig map[string]string) error {
 	diffContent, err := os.ReadFile(diffFile)
 	if err != nil {
 		return err
@@ -59,10 +64,10 @@ func DiffDiffFile(diffFile string) error {
 	if !targetResult.Exists() {
 		return errors.New("target not found")
 	}
-	return DiffString(benchResult.String(), targetResult.String())
+	return DiffString(benchResult.String(), targetResult.String(), aoConfig)
 }
 
-func DiffTwoFile(benchmarkFile, targetFile string) error {
+func DiffTwoFile(benchmarkFile, targetFile string, aoConfig map[string]string) error {
 	benchContent, err := os.ReadFile(benchmarkFile)
 	if err != nil {
 		return err
@@ -71,15 +76,16 @@ func DiffTwoFile(benchmarkFile, targetFile string) error {
 	if err != nil {
 		return err
 	}
-	return DiffString(string(benchContent), string(targetContent))
+	return DiffString(string(benchContent), string(targetContent), aoConfig)
 }
 
-func DiffString(benchContent, targetContent string) error {
+func DiffString(benchContent, targetContent string, aoConfig map[string]string) error {
 	diffCom := NewDiffCompare()
+	diffCom.AoConfig = aoConfig
 	return diffCom.ShowDiff(benchContent, targetContent)
 }
 
-func diffConsole() error {
+func diffConsole(aoConfig map[string]string) error {
 	content1, err := readInputFromConsole("benchmark")
 	if err != nil {
 		return err
@@ -88,7 +94,7 @@ func diffConsole() error {
 	if err != nil {
 		return err
 	}
-	return DiffString(content1, content2)
+	return DiffString(content1, content2, aoConfig)
 }
 
 func readInputFromConsole(title string) (string, error) {

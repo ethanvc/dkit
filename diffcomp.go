@@ -10,6 +10,7 @@ import (
 
 type DiffCompare struct {
 	ExpandJson bool
+	AoConfig   map[string]string
 }
 
 func NewDiffCompare() *DiffCompare {
@@ -50,14 +51,14 @@ func (com *DiffCompare) PrepareContent(content string) (string, string) {
 
 func (com *DiffCompare) prepareJson(content string) (string, string) {
 	const ext = "json"
-	if !com.ExpandJson {
-		buf := bytes.NewBuffer(nil)
-		json.Indent(buf, []byte(content), "", "    ")
-		return buf.String(), ext
+	contentBytes := []byte(content)
+	if com.ExpandJson {
+		contentBytes, _ = base.ExpandJson(contentBytes)
 	}
-	expandContent, _ := base.ExpandJson([]byte(content))
+	contentBytes, _ = base.JsonArrayToObject(contentBytes, com.AoConfig)
+
 	buf := bytes.NewBuffer(nil)
-	err := json.Indent(buf, expandContent, "", "    ")
+	err := json.Indent(buf, contentBytes, "", "    ")
 	if err != nil {
 		panic(err)
 	}
